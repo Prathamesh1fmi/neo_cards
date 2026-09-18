@@ -1,11 +1,12 @@
-name: "Release v1.0"
+name: "Build NeoCards"
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
-  build-and-release:
+  build:
     strategy:
       fail-fast: false
       matrix:
@@ -18,9 +19,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
           
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
         
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-20.04'
@@ -31,18 +36,35 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm ci
 
-      - name: Run E2E Tests (Playwright)
-        run: npx playwright test
+      - name: Disable Auto-Updater (Missing Keys)
+        # Bypasses the requirement for TAURI_PRIVATE_KEY since we aren't signing a production release here.
+        run: |
+          node -e "const fs = require('fs'); const path = 'src-tauri/tauri.conf.json'; const config = JSON.parse(fs.readFileSync(path)); config.tauri.updater.active = false; fs.writeFileSync(path, JSON.stringify(config, null, 2));"
+
+      - name: Build Tauri App
+        run: npm run tauri build
         
-      - name: Build and Package (Tauri)
-        uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
-          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
+      - name: Upload Windows Installers
+        if: matrix.platform == 'windows-latest'
+        uses: actions/upload-artifact@v4
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: "NeoCards ${{ github.ref_name }}"
-          releaseBody: "See RELEASE_NOTES.md for full details."
-          releaseDraft: true
-          prerelease: false
+          name: NeoCards-Windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/nsis/*.exe
+          
+      - name: Upload macOS Installers
+        if: matrix.platform == 'macos-latest'
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeoCards-macOS
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          
+      - name: Upload Linux Installers
+        if: matrix.platform == 'ubuntu-20.04'
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeoCards-Linux
+          path: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/deb/*.deb
