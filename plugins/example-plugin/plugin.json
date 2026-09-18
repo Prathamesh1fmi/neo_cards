@@ -1,0 +1,11 @@
+{
+  "id": "com.neocards.pomodoro",
+  "name": "Pomodoro Timer",
+  "author": "NeoCards Team",
+  "description": "Adds a native Pomodoro timer to the Review interface.",
+  "version": "1.0.0",
+  "minimum_core_version": "0.1.0",
+  "permissions": ["notifications", "reviewengine"],
+  "entrypoint": "main.js",
+  "icon": "icon.png"
+}

@@ -1,0 +1,43 @@
+[package]
+name = "neocards"
+version = "0.1.0"
+description = "A local-first learning platform"
+authors = ["NeoCards Team"]
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.5", features = [] }
+
+[dependencies]
+fsrs = "1.0"
+
+handlebars = "4.5.0"
+regex = "1.10.3"
+
+tauri = { version = "1.5", features = [
+    "shell-open", 
+    "dialog-all", 
+    "fs-all", 
+    "global-shortcut-all", 
+    "notification-all", 
+    "system-tray", 
+    "updater", 
+    "window-all",
+    "path-all"
+] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rusqlite = { version = "0.30.0", features = ["bundled"] }
+uuid = { version = "1.8", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "1.0"
+log = "0.4"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]
+[dev-dependencies]
+criterion = "0.5"
+
+[[bench]]
+name = "database_bench"
+harness = false
