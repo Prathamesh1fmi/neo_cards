@@ -34,3 +34,4 @@ pub fn add_note(deck_id: String, front_html: String, back_html: String, state: S
 
     Ok(())
 }
+

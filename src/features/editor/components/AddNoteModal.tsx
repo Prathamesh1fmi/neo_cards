@@ -65,3 +65,4 @@ export function AddNoteModal({ isOpen, onClose, deckId, deckName }: { isOpen: bo
     </div>
   );
 }
+
