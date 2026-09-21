@@ -35,7 +35,7 @@ export function ReviewInterface() {
     fetchNextCard();
   }, [fetchNextCard]);
 
-  const submitReview = useCallback(async (rating: number) => {
+  const submitReview = useCallback(async (rating: string) => {
     if (!currentCard) return;
     try {
       await invoke('submit_review', { 
@@ -52,19 +52,26 @@ export function ReviewInterface() {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!currentCard) return;
       
+      // Prevent shortcut interference if typing in an input
+      if (document.activeElement?.tagName === "INPUT" || document.activeElement?.tagName === "TEXTAREA") return;
+      
       if (!isFlipped && (e.code === 'Space' || e.code === 'Enter')) {
         e.preventDefault();
         setIsFlipped(true);
       } else if (isFlipped) {
         switch (e.code) {
-          case 'Digit1': e.preventDefault(); submitReview(1); break;
-          case 'Digit2': e.preventDefault(); submitReview(2); break;
-          case 'Digit3': e.preventDefault(); submitReview(3); break;
-          case 'Digit4': e.preventDefault(); submitReview(4); break;
+          case 'Digit1':
+          case 'Numpad1': e.preventDefault(); submitReview("Again"); break;
+          case 'Digit2':
+          case 'Numpad2': e.preventDefault(); submitReview("Hard"); break;
+          case 'Digit3':
+          case 'Numpad3': e.preventDefault(); submitReview("Good"); break;
+          case 'Digit4':
+          case 'Numpad4': e.preventDefault(); submitReview("Easy"); break;
           case 'Space': 
           case 'Enter':
             e.preventDefault(); 
-            submitReview(3); // Default to Good
+            submitReview("Good"); // Default to Good
             break;
         }
       }
@@ -136,10 +143,10 @@ export function ReviewInterface() {
             animate={{ opacity: 1, y: 0 }}
             className="flex gap-3 w-full sm:w-auto"
           >
-            <AnswerButton rating={1} label="Again" time="< 1m" color="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20" />
-            <AnswerButton rating={2} label="Hard" time="2d" color="bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500/20" />
-            <AnswerButton rating={3} label="Good" time="5d" color="bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20" />
-            <AnswerButton rating={4} label="Easy" time="8d" color="bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500/20" />
+            <AnswerButton rating="Again" keyBind="1" label="Again" time="< 1m" color="bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20" onClick={() => submitReview("Again")} />
+            <AnswerButton rating="Hard" keyBind="2" label="Hard" time="2d" color="bg-orange-500/10 text-orange-500 border-orange-500/20 hover:bg-orange-500/20" onClick={() => submitReview("Hard")} />
+            <AnswerButton rating="Good" keyBind="3" label="Good" time="5d" color="bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20" onClick={() => submitReview("Good")} />
+            <AnswerButton rating="Easy" keyBind="4" label="Easy" time="8d" color="bg-blue-500/10 text-blue-500 border-blue-500/20 hover:bg-blue-500/20" onClick={() => submitReview("Easy")} />
           </motion.div>
         )}
       </div>
@@ -147,12 +154,12 @@ export function ReviewInterface() {
   );
 }
 
-function AnswerButton({ rating, label, time, color }: any) {
+function AnswerButton({ keyBind, label, time, color, onClick }: any) {
   return (
-    <button className={`flex flex-col items-center justify-center px-6 py-2 rounded-lg border transition-colors flex-1 sm:flex-none ${color}`}>
+    <button onClick={onClick} className={`flex flex-col items-center justify-center px-6 py-2 rounded-lg border transition-colors flex-1 sm:flex-none ${color}`}>
       <span className="text-xs font-semibold opacity-70 mb-0.5">{time}</span>
       <span className="font-bold text-sm tracking-wide uppercase">{label}</span>
-      <span className="text-[10px] opacity-40 mt-1">{rating}</span>
+      <span className="text-[10px] opacity-40 mt-1">{keyBind}</span>
     </button>
   );
 }
