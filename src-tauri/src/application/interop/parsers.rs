@@ -136,22 +136,25 @@ impl Importer for ApkgImporter {
         }
         
         let mut media_imported = 0;
+        let mut media_content = String::new();
+        
+        // Read media content and immediately drop the mutable borrow
         if let Ok(mut media_file) = archive.by_name("media") {
-            let mut media_content = String::new();
-            if media_file.read_to_string(&mut media_content).is_ok() {
-                if let Ok(media_map) = serde_json::from_str::<serde_json::Value>(&media_content) {
-                    if let Some(obj) = media_map.as_object() {
-                        media_imported = obj.len();
-                        std::fs::create_dir_all(&self.media_dir).ok();
+            let _ = media_file.read_to_string(&mut media_content);
+        }
 
-                        for (key, val) in obj {
-                            if let Some(real_filename) = val.as_str() {
-                                // key is usually "0", "1", "2" which corresponds to the file inside the zip
-                                if let Ok(mut zipped_media) = archive.by_name(key) {
-                                    let out_path = self.media_dir.join(real_filename);
-                                    if let Ok(mut out_file) = File::create(&out_path) {
-                                        let _ = std::io::copy(&mut zipped_media, &mut out_file);
-                                    }
+        if !media_content.is_empty() {
+            if let Ok(media_map) = serde_json::from_str::<serde_json::Value>(&media_content) {
+                if let Some(obj) = media_map.as_object() {
+                    media_imported = obj.len();
+                    std::fs::create_dir_all(&self.media_dir).ok();
+
+                    for (key, val) in obj {
+                        if let Some(real_filename) = val.as_str() {
+                            if let Ok(mut zipped_media) = archive.by_name(key) {
+                                let out_path = self.media_dir.join(real_filename);
+                                if let Ok(mut out_file) = File::create(&out_path) {
+                                    let _ = std::io::copy(&mut zipped_media, &mut out_file);
                                 }
                             }
                         }
