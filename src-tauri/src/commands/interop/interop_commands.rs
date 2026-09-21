@@ -34,8 +34,11 @@ pub async fn start_import(req: ImportRequest, window: Window, state: State<'_, D
     });
 
     let path = PathBuf::from(&req.file_path);
-    let importer = match req.format.as_str() {
+    let importer: Box<dyn crate::application::interop::importer::Importer> = match req.format.as_str() {
         "csv" => Box::new(CsvImporter),
+        "apkg" => Box::new(crate::application::interop::parsers::ApkgImporter {
+            target_deck_id: "default_deck".to_string(), // In production, we'd take this from the req
+        }),
         _ => return Err("Unsupported format".to_string()),
     };
 
