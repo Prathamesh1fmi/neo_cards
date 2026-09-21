@@ -32,6 +32,8 @@ fn main() {
             commands::deck_commands::create_deck,
             commands::deck_commands::get_deck_tree,
             commands::deck_commands::delete_deck,
+            commands::deck_commands::get_deck_settings,
+            commands::deck_commands::update_deck_settings,
             commands::interop::interop_commands::start_import,
             commands::review::session_commands::get_next_card,
             commands::review::session_commands::submit_review,

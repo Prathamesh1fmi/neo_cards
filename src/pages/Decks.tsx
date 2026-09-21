@@ -6,8 +6,9 @@ import { Plus, Trash2, Folder, ChevronRight, ChevronDown, Play, Settings, FileUp
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ImportDialog } from "@/features/interop/components/ImportDialog";
+import { DeckSettingsModal } from "@/features/decks/components/DeckSettingsModal";
 
-function DeckNode({ node, onDelete, onStudy }: { node: DeckTree, onDelete: (id: string) => void, onStudy: (id: string) => void }) {
+function DeckNode({ node, onDelete, onStudy, onSettings }: { node: DeckTree, onDelete: (id: string) => void, onStudy: (id: string) => void, onSettings: (id: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   
   return (
@@ -31,7 +32,7 @@ function DeckNode({ node, onDelete, onStudy }: { node: DeckTree, onDelete: (id: 
             <Play size={14} className="fill-primary" />
           </button>
           <button 
-            onClick={(e) => { e.stopPropagation(); /* TODO settings */ }}
+            onClick={(e) => { e.stopPropagation(); onSettings(node.deck.id); }}
             className="p-1.5 text-muted-foreground hover:bg-accent rounded"
             title="Deck Settings"
           >
@@ -56,7 +57,7 @@ function DeckNode({ node, onDelete, onStudy }: { node: DeckTree, onDelete: (id: 
             className="ml-6 border-l border-border pl-2 overflow-hidden"
           >
             {node.children.map(child => (
-              <DeckNode key={child.deck.id} node={child} onDelete={onDelete} onStudy={onStudy} />
+              <DeckNode key={child.deck.id} node={child} onDelete={onDelete} onStudy={onStudy} onSettings={onSettings} />
             ))}
           </motion.div>
         )}
@@ -70,6 +71,7 @@ export function Decks() {
   const navigate = useNavigate();
   const [newDeckName, setNewDeckName] = useState("");
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [settingsDeckId, setSettingsDeckId] = useState<string | null>(null);
 
   const { data: tree, isLoading } = useQuery({
     queryKey: ['decks'],
@@ -142,7 +144,7 @@ export function Decks() {
             ) : (
               <div className="space-y-1 mt-2">
                 {tree?.map(node => (
-                  <DeckNode key={node.deck.id} node={node} onDelete={(id) => deleteMutation.mutate(id)} onStudy={handleStudy} />
+                  <DeckNode key={node.deck.id} node={node} onDelete={(id) => deleteMutation.mutate(id)} onStudy={handleStudy} onSettings={(id) => setSettingsDeckId(id)} />
                 ))}
               </div>
             )}
@@ -150,6 +152,9 @@ export function Decks() {
         </div>
       </div>
       <ImportDialog isOpen={isImportOpen} onClose={() => { setIsImportOpen(false); queryClient.invalidateQueries({ queryKey: ['decks'] }); }} />
+      {settingsDeckId && (
+        <DeckSettingsModal isOpen={!!settingsDeckId} onClose={() => setSettingsDeckId(null)} deckId={settingsDeckId} />
+      )}
     </PageContainer>
   );
 }
