@@ -69,18 +69,19 @@ impl Importer for ApkgImporter {
         
         let anki_conn = rusqlite::Connection::open(&db_path).map_err(|e| e.to_string())?;
         
-        let mut stmt = anki_conn.prepare("SELECT guid, tags, flds FROM notes").map_err(|e| e.to_string())?;
+        let mut stmt = anki_conn.prepare("SELECT guid, tags, flds, id FROM notes").map_err(|e| e.to_string())?;
         let notes_iter = stmt.query_map([], |row| {
             let guid: String = row.get(0)?;
             let tags: String = row.get(1)?;
             let flds: String = row.get(2)?;
-            Ok((guid, tags, flds))
+            let nid: i64 = row.get(3)?;
+            Ok((guid, tags, flds, nid))
         }).map_err(|e| e.to_string())?;
         
         let mut notes_imported = 0;
         
         for item in notes_iter {
-            if let Ok((guid, tags, flds)) = item {
+            if let Ok((guid, tags, flds, nid)) = item {
                 let fields: Vec<&str> = flds.split('\x1F').collect();
                 
                 let content_json = json!({
@@ -89,20 +90,44 @@ impl Importer for ApkgImporter {
                 }).to_string();
                 
                 let note = Note {
-                    id: guid,
+                    id: guid.clone(),
                     deck_id: self.target_deck_id.clone(),
                     note_type: "AnkiImport".to_string(),
                     content: content_json,
                     created_at: chrono::Utc::now().timestamp(),
                 };
                 
-                // Ignore errors on missing tables during scaffolding prototyping, but print them
                 let _ = tx.execute(
                     "INSERT OR REPLACE INTO notes (id, deck_id, note_type, content, created_at) VALUES (?1, ?2, ?3, ?4, ?5)",
                     rusqlite::params![note.id, note.deck_id, note.note_type, note.content, note.created_at],
                 );
-                
                 notes_imported += 1;
+
+                // Now import the cards associated with this note
+                if let Ok(mut card_stmt) = anki_conn.prepare("SELECT id, due, ivl, factor, reps, lapses, queue FROM cards WHERE nid = ?1") {
+                    let _ = card_stmt.query_map(rusqlite::params![nid], |row| {
+                        let cid: i64 = row.get(0)?;
+                        let due: i64 = row.get(1)?;
+                        let ivl: i64 = row.get(2)?;
+                        let factor: i64 = row.get(3)?;
+                        let reps: i64 = row.get(4)?;
+                        let lapses: i64 = row.get(5)?;
+                        let queue: i64 = row.get(6)?; // Anki queue: 0=new, 1=learning, 2=review, 3=day learn, -1=suspended
+                        Ok((cid, due, ivl, factor, reps, lapses, queue))
+                    }).and_then(|cards_iter| {
+                        for card_res in cards_iter {
+                            if let Ok((cid, due, ivl, factor, reps, lapses, queue)) = card_res {
+                                // Anki factors are stored as 2500 for 250% (2.5)
+                                let ease_factor = (factor as f64) / 1000.0;
+                                let _ = tx.execute(
+                                    "INSERT OR REPLACE INTO cards (id, note_id, due_date, interval, ease_factor, reps, lapses, state) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                                    rusqlite::params![cid.to_string(), note.id, due, ivl, ease_factor, reps, lapses, queue],
+                                );
+                            }
+                        }
+                        Ok(())
+                    });
+                }
             }
         }
         

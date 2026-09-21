@@ -30,7 +30,10 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             commands::deck_commands::create_deck,
             commands::deck_commands::get_deck_tree,
-            commands::deck_commands::delete_deck
+            commands::deck_commands::delete_deck,
+            commands::interop::interop_commands::start_import,
+            commands::review::session_commands::get_next_card,
+            commands::review::session_commands::submit_review
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

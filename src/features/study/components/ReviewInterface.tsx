@@ -14,22 +14,36 @@ export function ReviewInterface() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // MOCK DATA for architectural scaffolding
-  useEffect(() => {
-    setTimeout(() => {
-      setCurrentCard({
-        card: { id: "mock-1" },
-        front_html: "<div class='text-xl text-center font-serif'>La biblioteca</div>",
-        back_html: "<div class='text-xl text-center font-serif text-primary mb-4'>The library</div><hr class='border-border my-4'/><div class='text-sm text-muted-foreground'>Noun, feminine.</div>"
-      });
+  const { deckId } = { deckId: "default_deck" }; // In a real routing setup we'd use useParams()
+  
+  const fetchNextCard = useCallback(async () => {
+    setLoading(true);
+    try {
+      const card = await invoke<CardDto | null>('get_next_card', { deckId });
+      setCurrentCard(card);
+      setIsFlipped(false);
+    } catch (e) {
+      console.error(e);
+    } finally {
       setLoading(false);
-    }, 300);
-  }, []);
+    }
+  }, [deckId]);
 
-  const submitReview = useCallback((rating: number) => {
-    // invoke('submit_review', { req: { card_id: currentCard.card.id, rating, time_taken_ms: 1500 } })
-    setCurrentCard(null); // Move to next card
-  }, [currentCard]);
+  useEffect(() => {
+    fetchNextCard();
+  }, [fetchNextCard]);
+
+  const submitReview = useCallback(async (rating: number) => {
+    if (!currentCard) return;
+    try {
+      await invoke('submit_review', { 
+        req: { card_id: currentCard.card.id, rating, time_taken_ms: 1500 } 
+      });
+      fetchNextCard();
+    } catch (e) {
+      console.error(e);
+    }
+  }, [currentCard, fetchNextCard]);
 
   // Global Keyboard Shortcuts
   useEffect(() => {
