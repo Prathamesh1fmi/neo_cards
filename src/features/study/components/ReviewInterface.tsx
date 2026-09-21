@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { invoke } from '@tauri-apps/api/tauri';
 import { CheckCircle2, LayoutGrid } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 
 interface CardDto {
   card: { id: string };
@@ -14,7 +15,8 @@ export function ReviewInterface() {
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const { deckId } = { deckId: "default_deck" }; // In a real routing setup we'd use useParams()
+  const [searchParams] = useSearchParams();
+  const deckId = searchParams.get("deckId") || "default_deck";
   
   const fetchNextCard = useCallback(async () => {
     setLoading(true);

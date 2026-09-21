@@ -26,18 +26,20 @@ pub async fn start_import(req: ImportRequest, window: Window, state: State<'_, D
     let mut conn = state.conn.lock().unwrap();
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
-    // Emit progress event to React
-    let _ = window.emit("import_progress", ProgressEvent {
-        current: 0,
-        total: 100,
-        message: "Validating file...".to_string(),
-    });
-
     let path = PathBuf::from(&req.file_path);
+    let deck_name = path.file_stem().unwrap_or_default().to_string_lossy().to_string();
+    let deck_id = uuid::Uuid::new_v4().to_string();
+    
+    // Auto-create a deck for this import
+    tx.execute(
+        "INSERT INTO decks (id, parent_id, name, created_at) VALUES (?1, NULL, ?2, ?3)",
+        rusqlite::params![deck_id, deck_name, chrono::Utc::now().timestamp()]
+    ).map_err(|e| e.to_string())?;
+
     let importer: Box<dyn crate::application::interop::importer::Importer> = match req.format.as_str() {
         "csv" => Box::new(CsvImporter),
         "apkg" => Box::new(crate::application::interop::parsers::ApkgImporter {
-            target_deck_id: "default_deck".to_string(), // In production, we'd take this from the req
+            target_deck_id: deck_id, 
         }),
         _ => return Err("Unsupported format".to_string()),
     };
