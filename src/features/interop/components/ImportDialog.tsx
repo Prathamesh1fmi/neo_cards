@@ -21,8 +21,9 @@ export function ImportDialog({ isOpen, onClose }: { isOpen: boolean, onClose: ()
   const handleImport = async () => {
     setStatus('importing');
     try {
+      const extension = filePath.split('.').pop()?.toLowerCase() || 'json';
       const result = await invoke('start_import', { 
-        req: { file_path: filePath, format: 'csv', resolution: 'merge' } 
+        req: { file_path: filePath, format: extension, resolution: 'merge' } 
       });
       setMessage(result as string);
       setStatus('success');
