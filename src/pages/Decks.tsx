@@ -7,8 +7,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { ImportDialog } from "@/features/interop/components/ImportDialog";
 import { DeckSettingsModal } from "@/features/decks/components/DeckSettingsModal";
+import { AddNoteModal } from "@/features/editor/components/AddNoteModal";
 
-function DeckNode({ node, onDelete, onStudy, onSettings }: { node: DeckTree, onDelete: (id: string) => void, onStudy: (id: string) => void, onSettings: (id: string) => void }) {
+function DeckNode({ node, onDelete, onStudy, onSettings, onAddNote }: { node: DeckTree, onDelete: (id: string) => void, onStudy: (id: string) => void, onSettings: (id: string) => void, onAddNote: (id: string, name: string) => void }) {
   const [expanded, setExpanded] = useState(false);
   
   return (
@@ -24,6 +25,13 @@ function DeckNode({ node, onDelete, onStudy, onSettings }: { node: DeckTree, onD
         <span className="flex-1 font-medium">{node.deck.name}</span>
         
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onAddNote(node.deck.id, node.deck.name); }}
+            className="p-1.5 text-muted-foreground hover:bg-accent hover:text-foreground rounded"
+            title="Add Cards"
+          >
+            <Plus size={14} />
+          </button>
           <button 
             onClick={(e) => { e.stopPropagation(); onStudy(node.deck.id); }}
             className="p-1.5 text-primary hover:bg-primary/10 rounded"
@@ -57,7 +65,7 @@ function DeckNode({ node, onDelete, onStudy, onSettings }: { node: DeckTree, onD
             className="ml-6 border-l border-border pl-2 overflow-hidden"
           >
             {node.children.map(child => (
-              <DeckNode key={child.deck.id} node={child} onDelete={onDelete} onStudy={onStudy} onSettings={onSettings} />
+              <DeckNode key={child.deck.id} node={child} onDelete={onDelete} onStudy={onStudy} onSettings={onSettings} onAddNote={onAddNote} />
             ))}
           </motion.div>
         )}
@@ -72,6 +80,7 @@ export function Decks() {
   const [newDeckName, setNewDeckName] = useState("");
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [settingsDeckId, setSettingsDeckId] = useState<string | null>(null);
+  const [addNoteDeck, setAddNoteDeck] = useState<{id: string, name: string} | null>(null);
 
   const { data: tree, isLoading } = useQuery({
     queryKey: ['decks'],
@@ -144,7 +153,14 @@ export function Decks() {
             ) : (
               <div className="space-y-1 mt-2">
                 {tree?.map(node => (
-                  <DeckNode key={node.deck.id} node={node} onDelete={(id) => deleteMutation.mutate(id)} onStudy={handleStudy} onSettings={(id) => setSettingsDeckId(id)} />
+                  <DeckNode 
+                    key={node.deck.id} 
+                    node={node} 
+                    onDelete={(id) => deleteMutation.mutate(id)} 
+                    onStudy={handleStudy} 
+                    onSettings={(id) => setSettingsDeckId(id)} 
+                    onAddNote={(id, name) => setAddNoteDeck({ id, name })}
+                  />
                 ))}
               </div>
             )}
@@ -154,6 +170,14 @@ export function Decks() {
       <ImportDialog isOpen={isImportOpen} onClose={() => { setIsImportOpen(false); queryClient.invalidateQueries({ queryKey: ['decks'] }); }} />
       {settingsDeckId && (
         <DeckSettingsModal isOpen={!!settingsDeckId} onClose={() => setSettingsDeckId(null)} deckId={settingsDeckId} />
+      )}
+      {addNoteDeck && (
+        <AddNoteModal 
+          isOpen={!!addNoteDeck} 
+          onClose={() => { setAddNoteDeck(null); queryClient.invalidateQueries({ queryKey: ['decks'] }); }} 
+          deckId={addNoteDeck.id} 
+          deckName={addNoteDeck.name} 
+        />
       )}
     </PageContainer>
   );
