@@ -22,7 +22,7 @@ pub struct ProgressEvent {
 }
 
 #[tauri::command]
-pub async fn start_import(req: ImportRequest, window: Window, state: State<'_, DbState>) -> Result<String, String> {
+pub async fn start_import(req: ImportRequest, window: Window, state: State<'_, DbState>, app_handle: tauri::AppHandle) -> Result<String, String> {
     let mut conn = state.conn.lock().unwrap();
     let tx = conn.transaction().map_err(|e| e.to_string())?;
 
@@ -36,10 +36,13 @@ pub async fn start_import(req: ImportRequest, window: Window, state: State<'_, D
         rusqlite::params![deck_id, deck_name, chrono::Utc::now().timestamp()]
     ).map_err(|e| e.to_string())?;
 
+    let media_dir = app_handle.path_resolver().app_data_dir().unwrap_or_default().join("media");
+
     let importer: Box<dyn crate::application::interop::importer::Importer> = match req.format.as_str() {
         "csv" => Box::new(CsvImporter),
         "apkg" => Box::new(crate::application::interop::parsers::ApkgImporter {
             target_deck_id: deck_id, 
+            media_dir,
         }),
         _ => return Err("Unsupported format".to_string()),
     };

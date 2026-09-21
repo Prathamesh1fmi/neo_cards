@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { invoke } from '@tauri-apps/api/tauri';
+import { invoke, convertFileSrc } from '@tauri-apps/api/tauri';
+import { appDataDir, join } from '@tauri-apps/api/path';
 import { CheckCircle2, LayoutGrid } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
@@ -14,6 +15,23 @@ export function ReviewInterface() {
   const [currentCard, setCurrentCard] = useState<CardDto | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [mediaPath, setMediaPath] = useState<string>("");
+
+  useEffect(() => {
+    appDataDir().then(dir => join(dir, "media")).then(setMediaPath).catch(console.error);
+  }, []);
+
+  const parseHtml = useCallback((html: string) => {
+    if (!mediaPath) return html;
+    // Anki images are usually just filenames: src="image.png"
+    // We rewrite them to use Tauri's asset protocol
+    return html.replace(/src="([^"]+)"/g, (match, p1) => {
+      // Don't replace absolute URLs
+      if (p1.startsWith("http") || p1.startsWith("data:")) return match;
+      // Convert to asset:// URL
+      return `src="${convertFileSrc(mediaPath + "\\" + p1)}"`;
+    });
+  }, [mediaPath]);
 
   const [searchParams] = useSearchParams();
   const deckId = searchParams.get("deckId") || "default_deck";
@@ -111,7 +129,7 @@ export function ReviewInterface() {
           className="w-full bg-card border border-border shadow-sm rounded-2xl p-8 sm:p-12 text-foreground"
         >
           {/* FRONT */}
-          <div dangerouslySetInnerHTML={{ __html: currentCard.front_html }} className="prose dark:prose-invert max-w-none focus:outline-none" />
+          <div dangerouslySetInnerHTML={{ __html: parseHtml(currentCard.front_html) }} className="prose dark:prose-invert max-w-none focus:outline-none" />
           
           {/* BACK */}
           <AnimatePresence>
@@ -121,7 +139,7 @@ export function ReviewInterface() {
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-8 pt-8 border-t border-border"
               >
-                <div dangerouslySetInnerHTML={{ __html: currentCard.back_html }} className="prose dark:prose-invert max-w-none focus:outline-none" />
+                <div dangerouslySetInnerHTML={{ __html: parseHtml(currentCard.back_html) }} className="prose dark:prose-invert max-w-none focus:outline-none" />
               </motion.div>
             )}
           </AnimatePresence>
