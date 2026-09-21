@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use crate::domain::document::model::DocumentNode;
 use crate::domain::note::Note;
 use rusqlite::Transaction;
 

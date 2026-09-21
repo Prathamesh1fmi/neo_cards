@@ -1,4 +1,4 @@
-use tauri::{AppHandle, GlobalShortcutManager, Manager};
+use tauri::{AppHandle, GlobalShortcutManager};
 
 pub fn register_global_shortcuts(app: &AppHandle) {
     let mut manager = app.global_shortcut_manager();

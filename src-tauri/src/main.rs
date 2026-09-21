@@ -4,6 +4,7 @@ mod db;
 mod commands;
 mod domain;
 mod infrastructure;
+mod application;
 
 use std::sync::Mutex;
 use tauri::Manager;

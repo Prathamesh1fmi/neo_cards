@@ -1,4 +1,4 @@
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{params, Connection};
 use crate::domain::deck::{Deck, DeckTree};
 use std::collections::HashMap;
 
