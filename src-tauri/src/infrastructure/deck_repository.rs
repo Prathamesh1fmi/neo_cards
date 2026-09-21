@@ -31,9 +31,7 @@ pub fn get_all_decks(conn: &Connection) -> Result<Vec<Deck>, rusqlite::Error> {
 pub fn get_deck_tree(conn: &Connection) -> Result<Vec<DeckTree>, rusqlite::Error> {
     let decks = get_all_decks(conn)?;
     let mut map: HashMap<String, DeckTree> = HashMap::new();
-    let mut roots = Vec::new();
-
-    // Map all decks
+    
     for deck in &decks {
         map.insert(deck.id.clone(), DeckTree {
             deck: deck.clone(),
@@ -41,24 +39,32 @@ pub fn get_deck_tree(conn: &Connection) -> Result<Vec<DeckTree>, rusqlite::Error
         });
     }
 
-    // Build hierarchy
-    let mut tree_map = map.clone();
-    for deck in decks {
-        if let Some(parent_id) = deck.parent_id {
-            if let Some(parent_tree) = tree_map.get_mut(&parent_id) {
-                if let Some(child_tree) = map.get(&deck.id) {
-                    parent_tree.children.push(child_tree.clone());
-                }
-            }
+    let mut children_map: HashMap<String, Vec<String>> = HashMap::new();
+    let mut root_ids = Vec::new();
+    
+    for deck in &decks {
+        if let Some(parent_id) = &deck.parent_id {
+            children_map.entry(parent_id.clone()).or_default().push(deck.id.clone());
         } else {
-            if let Some(root_tree) = tree_map.get(&deck.id) {
-                roots.push(root_tree.clone());
-            }
+            root_ids.push(deck.id.clone());
         }
     }
-    // Note: A full recursive tree build in Rust requires a bit more ownership gymnastics. 
-    // This is a simplified linear pass. 
     
+    fn build_node(id: &str, map: &HashMap<String, DeckTree>, children_map: &HashMap<String, Vec<String>>) -> DeckTree {
+        let mut node = map.get(id).unwrap().clone();
+        if let Some(child_ids) = children_map.get(id) {
+            for child_id in child_ids {
+                node.children.push(build_node(child_id, map, children_map));
+            }
+        }
+        node
+    }
+    
+    let mut roots = Vec::new();
+    for root_id in root_ids {
+        roots.push(build_node(&root_id, &map, &children_map));
+    }
+
     Ok(roots)
 }
 

@@ -68,6 +68,11 @@ export function Decks() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['decks'] })
   });
 
+  const handleCreate = () => {
+    if (newDeckName.trim() === "") return;
+    createMutation.mutate();
+  };
+
   return (
     <PageContainer title="Decks Explorer">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 h-full">
@@ -78,11 +83,11 @@ export function Decks() {
               placeholder="New Deck Name..."
               value={newDeckName}
               onChange={(e) => setNewDeckName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && createMutation.mutate()}
+              onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
               className="flex-1 bg-transparent text-sm outline-none px-2 py-1"
             />
             <button 
-              onClick={() => createMutation.mutate()}
+              onClick={handleCreate}
               className="p-1 hover:bg-accent rounded-md text-muted-foreground"
             >
               <Plus size={16} />
