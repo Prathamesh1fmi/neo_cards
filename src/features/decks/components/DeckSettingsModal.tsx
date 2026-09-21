@@ -180,3 +180,4 @@ export function DeckSettingsModal({ isOpen, onClose, deckId }: { isOpen: boolean
     </div>
   );
 }
+
