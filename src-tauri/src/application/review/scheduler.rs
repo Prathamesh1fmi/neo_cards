@@ -65,7 +65,7 @@ impl SchedulerService for FsrsScheduler {
         lapses: i32
     ) -> Result<SchedulingInfo, String> {
         // MOCK FSRS CALCULATION FOR ARCHITECTURE VALIDATION
-        let mut new_reps = reps + 1;
+        let new_reps = reps + 1;
         let mut new_lapses = lapses;
         let mut next_due = chrono::Utc::now().timestamp();
         let mut new_state = CardState::Review;

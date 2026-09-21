@@ -51,15 +51,18 @@ impl Importer for ApkgImporter {
         let mut archive = ZipArchive::new(file).map_err(|e| e.to_string())?;
         
         let temp_dir = tempfile::tempdir().map_err(|e| e.to_string())?;
-        let mut db_path = temp_dir.path().join("collection.anki21");
         
-        let mut db_file_in_archive = match archive.by_name("collection.anki21") {
-            Ok(f) => f,
-            Err(_) => {
-                db_path = temp_dir.path().join("collection.anki2");
-                archive.by_name("collection.anki2").map_err(|_| "Missing collection database".to_string())?
+        let mut is_anki21 = false;
+        for i in 0..archive.len() {
+            if archive.by_index(i).map_err(|e| e.to_string())?.name() == "collection.anki21" {
+                is_anki21 = true;
+                break;
             }
-        };
+        }
+        
+        let db_path = temp_dir.path().join(if is_anki21 { "collection.anki21" } else { "collection.anki2" });
+        let mut db_file_in_archive = archive.by_name(if is_anki21 { "collection.anki21" } else { "collection.anki2" })
+            .map_err(|_| "Missing collection database".to_string())?;
 
         let mut out_file = File::create(&db_path).map_err(|e| e.to_string())?;
         std::io::copy(&mut db_file_in_archive, &mut out_file).map_err(|e| e.to_string())?;

@@ -1,5 +1,4 @@
 use crate::domain::card::Card;
-use crate::application::review::scheduler::{Rating, SchedulerService};
 use rusqlite::Connection;
 
 pub struct QueueManager {
@@ -10,7 +9,7 @@ pub struct QueueManager {
 }
 
 impl QueueManager {
-    pub fn build(conn: &Connection, deck_id: &str) -> Result<Self, String> {
+    pub fn build(_conn: &Connection, _deck_id: &str) -> Result<Self, String> {
         // MOCK: In production, query cards WHERE deck_id = ? AND due_date <= NOW()
         Ok(Self {
             new_queue: Vec::new(),
