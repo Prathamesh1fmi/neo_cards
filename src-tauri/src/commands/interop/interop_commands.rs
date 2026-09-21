@@ -44,7 +44,7 @@ pub async fn start_import(req: ImportRequest, window: Window, state: State<'_, D
 
     let resolution = match req.resolution.as_str() {
         "replace" => ConflictResolution::Replace,
-        _ => ConflictResolution::Merge,
+        _ => ConflictResolution::Merge, 
     };
 
     // Execute atomic import

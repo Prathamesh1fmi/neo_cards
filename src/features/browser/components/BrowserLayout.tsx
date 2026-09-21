@@ -42,7 +42,7 @@ export function BrowserLayout() {
         <div className="h-12 border-b border-border flex items-center px-4 justify-between bg-card">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Database size={16} className="text-muted-foreground" />
-            142,091 Notes Found
+            Search Results
           </div>
           <div className="flex gap-2">
             <button className="flex items-center gap-2 px-3 py-1.5 text-sm border border-border rounded-md hover:bg-accent">

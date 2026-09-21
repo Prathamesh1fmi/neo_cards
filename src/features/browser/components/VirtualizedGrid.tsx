@@ -1,18 +1,15 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/tauri';
 
-// For Milestone 6, we scaffold the visual representation.
-// In production, this uses @tanstack/react-virtual and @tanstack/react-table
 export function VirtualizedGrid({ query }: { query: string }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [rows, setRows] = useState<any[]>([]);
 
-  // MOCK DATA
-  const rows = Array.from({ length: 50 }).map((_, i) => ({
-    id: i,
-    deck: "Biology",
-    front: `Mitochondria ${i}`,
-    due: "2024-11-01",
-    state: "Review"
-  }));
+  useEffect(() => {
+    invoke('search_cards', { query }).then((res: any) => {
+      setRows(res);
+    }).catch(console.error);
+  }, [query]);
 
   return (
     <div ref={scrollRef} className="h-full w-full overflow-auto relative">
@@ -28,7 +25,7 @@ export function VirtualizedGrid({ query }: { query: string }) {
         </thead>
         <tbody>
           {rows.map(row => (
-            <tr key={row.id} className="hover:bg-accent/50 cursor-pointer border-b border-border transition-colors group">
+            <tr key={row.card_id} className="hover:bg-accent/50 cursor-pointer border-b border-border transition-colors group">
               <td className="p-3 border-r border-border text-center"><input type="checkbox" className="opacity-0 group-hover:opacity-100" /></td>
               <td className="p-3 border-r border-border truncate max-w-xs">{row.front}</td>
               <td className="p-3 border-r border-border">{row.deck}</td>
