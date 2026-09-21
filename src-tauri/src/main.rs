@@ -38,7 +38,6 @@ fn main() {
             commands::review::session_commands::get_next_card,
             commands::review::session_commands::submit_review,
             commands::browser::search_commands::search_cards,
-            commands::browser::search_commands::search_notes,
             commands::browser::search_commands::execute_bulk_action
         ])
         .run(tauri::generate_context!())
